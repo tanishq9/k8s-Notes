@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  replicas: 2
+  template:
+    metadata:
+      name: my-pod
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx
+        image: vinsdocker/nginx-gke
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort # Default is ClusterIP
+  selector:
+    app: my-app # Route service traffic to pods with label keys and values matching this selector.
+  ports:
+  - port: 80 # The port that will be exposed by this service.
+    targetPort: 80 # Number or name of the port to access on the pods targeted by the service.
+    nodePort: 30001 # The port on each node on which this service is exposed when type is NodePort or LoadBalancer. Usually assigned by the system. If a value is specified, in-range, and not in use it will be used, otherwise the operation will fail.
+
+# for i in {1..1000}; do curl -s http://my-app | grep -o "<title>[^<]*" | tail -c+8; done

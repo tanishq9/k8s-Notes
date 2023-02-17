@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds
+data:
+  MONGO_INITDB_ROOT_USERNAME: YWRtaW4=
+  MONGO_INITDB_ROOT_PASSWORD: cGFzc3dvcmQ=
+  ME_CONFIG_MONGODB_ADMINUSERNAME: YWRtaW4=
+  ME_CONFIG_MONGODB_ADMINPASSWORD: cGFzc3dvcmQ=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-script
+data:
+  data.js: |
+    db = db.getSiblingDB('product-service');
+    db.createCollection('products');
+    db.products.insertMany(
+        [
+            {
+                "name":"iphone",
+                "price": "1200"
+            },
+            {
+                "name":"ipad",
+                "price": "800"
+            },
+            {
+                "name":"mac",
+                "price": "3000"
+            }                
+        ]
+    )
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  replicas: 1
+  template:
+    metadata:
+      name: my-pod
+      labels:
+        app: my-app
+    spec:
+      restartPolicy: Always # Default is Always
+      containers:
+      - name: mongo # 27017 port is exposed inside pod
+        image: mongo:4.4-focal
+        envFrom:
+        - secretRef: 
+            name: db-creds
+        volumeMounts:
+        - name: init-script-volume
+          mountPath: /docker-entrypoint-initdb.d
+      - name: mongo-express # 8081 port is exposed inside pod
+        image: mongo-express:1.0.0-alpha.4
+        envFrom:
+        - secretRef: 
+            name: db-creds
+        env:
+        - name: ME_CONFIG_MONGODB_SERVER 
+          value: localhost # would be the service name if deployed in separate pod
+        # ports: # optional
+        # - name: port
+        #  containerPort: 8081
+        #  hostPort: 8081
+      volumes:
+      - name: init-script-volume
+        configMap:
+          name: init-script
+

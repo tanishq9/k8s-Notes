@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+# In SS, the pods are not controlled by replica set
+# All pods are given fixed names and are indexed
+# Example: mongo-db-pod-0, mongo-db-pod-1, etc depends on replicas count
+# Particularly used in scenarios when we want to route request to a specific pod always (make it predictable)
+kind: StatefulSet
+metadata:
+  name: mongo-db-ss
+spec:
+  serviceName: mongo-svc
+  selector:
+    matchLabels:
+      app: mongo-db-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mongo-db-pod
+    spec:
+      containers:
+      - name: mongo-db
+        image: mongo:4.4-focal
+        ports:
+        - containerPort: 27017 # just for documentation, not necessary to open port
+        volumeMounts:
+        - name: init-volume
+          mountPath: /docker-entrypoint-initdb.d
+        - name: mongo-storage-pvc
+          mountPath: /data/db
+      volumes:
+      - name: init-volume
+        configMap:
+          name: init-js
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-storage-pvc
+    spec:
+      storageClassName: standard
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1G
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-svc
+spec:
+  # Required for headless service, in this case svc won't have a IP address infact it won't have a DNS entry
+  # To access the pod this service points, we would have to use: pod_name.svc_name
+  # For StatefulSet, when we use this headless service then each replica in that SS gets a different access identifier
+  # like: pod-1.mongo-svc, pod-2.mongo.svc, ... Now based on internal logic we can route request to any of the pod
+  clusterIP: None 
+  selector:
+    app: mongo-db-pod
+  ports:
+  - port: 27017
+    targetPort: 27017

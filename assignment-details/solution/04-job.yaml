@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-app-deploy
+spec:
+  selector:
+    matchLabels:
+      app: job-app-pod # match label
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: job-app-pod # assign label
+    spec:
+      containers:
+      - name: job
+        image: vinsdocker/k8s-dice-job
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 1
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 3
+        envFrom:
+        - secretRef:
+            name: job-db-secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 2000m
+            memory: 2000Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-svc
+spec:
+  selector:
+    app: job-app-pod
+  ports:
+  - port: 8080
+    targetPort: 8080

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: candidate-app-deploy
+spec:
+  selector:
+    matchLabels:
+      app: candidate-app-pod # match label
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: candidate-app-pod # assign label
+    spec:
+      containers:
+      - name: candidate
+        image: vinsdocker/k8s-dice-candidate
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 1
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 3
+        envFrom:
+        - secretRef:
+            name: candidate-db-secret
+        env:
+        - name: "job.service.url"
+          value: "http://job-svc:8080/job/"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 2000m
+            memory: 2000Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: candidate-svc
+spec:
+  selector:
+    app: candidate-app-pod
+  ports:
+  - port: 8080
+    targetPort: 8080

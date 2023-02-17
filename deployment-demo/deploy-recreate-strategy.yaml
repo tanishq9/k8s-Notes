@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-service-deploy
+  annotations:
+    kubernetes.io/change-cause: "deploying v3"
+spec:
+  strategy:
+    type: Recreate # all old pods would be deleted and then new pods would be created
+  minReadySeconds: 10 # hardcoding the time in seconds the app takes to become available
+  selector:
+    matchLabels:
+      app: my-service
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app:  my-service
+    spec:
+      containers:
+      - name: my-service
+        image: vinsdocker/k8s-app:v3
+        env:
+        - name: "key"
+          value: "value"

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    startupProbe:
+      httpGet:
+        path: / # we dont have to provide the host endpoint (only path) since kubelet is the one executing these probes so they are on the same host, only thing kubelet expects is the path
+        port: 80
+      # default properties would apply
+      initialDelaySeconds: 10
+      periodSeconds: 1 # default is 10 seconds
+      failureThreshold: 3 # default is 3 as well

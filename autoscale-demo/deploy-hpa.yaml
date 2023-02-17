@@ -1,0 +1,71 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler # would monitor deployment
+metadata:
+  name: my-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-deploy # deployment name to monitor
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 10 # for demo purpose
+  behavior: 
+    scaleDown:
+      stabilizationWindowSeconds: 10 # for demo purpose, 300 is more suitable value as we should not be terminating pod so frequently
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        resources:
+          requests:
+            cpu: 50m
+            memory: 10Mi
+          limits:
+            cpu: 50m
+            memory: 10Mi
+        # Added probe so that we only register pod to service when live (alive) and ready (to take request)
+        startupProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 1
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 5
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  # By default, it is ClusterIP (within the cluster pod-to-pod communication)
+  selector:
+    app: my-app
+  ports:
+  - port: 80
+    targetPort: 80

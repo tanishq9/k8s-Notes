@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-service-deploy
+spec:
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxSurge: "100%"
+      #maxUnavailable
+  selector:
+    matchLabels:
+      app: my-service
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app:  my-service
+    spec:
+      containers:
+      - name: my-service
+        image: vinsdocker/k8s-app:v2
+        env:
+        - name: "key"
+          value: "value"

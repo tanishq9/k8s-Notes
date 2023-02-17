@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - name: "web-port" # we have to give name for the port
+      containerPort: 80
+      protocol: TCP # this is the default as well
