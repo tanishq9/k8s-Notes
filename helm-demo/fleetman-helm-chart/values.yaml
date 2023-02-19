@@ -1,0 +1,4 @@
+replicaCount: 3
+env: prod
+development: false
+dockerRepoName: richardCHesterwood
