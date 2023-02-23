@@ -114,3 +114,8 @@ Vault annotation change how vault agent connector communicate with Vault such as
     - Init container will request Vault server for the secret and pass in the auth token (which it received in previous call).
     - Vault will match auth token with policy for specific secrets and then secrets are returned to init container.
     - The init container will store the secret in an empty directory volume which is shared among all 3 containers within the pod.
+    
+<img width="1053" alt="Screenshot 2023-02-24 at 2 34 06 AM" src="https://user-images.githubusercontent.com/35667308/221030531-4419b1b5-f96d-413b-9a52-05eea4f1aa84.png">
+
+   
+ 
