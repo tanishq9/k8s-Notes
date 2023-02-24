@@ -18,7 +18,7 @@ Unsealing Vault:
 
 - kubectl exec -it vault-0 -- /bin/sh
 - vault operator unseal <unseal-key>; these ’n’ number of unseal-keys would together form the master key, which is used to protect the encryption key, which is further used to protect data present in vault.
-- vault login <root-token>; this is the root token generated after vault was unsealed.
+- vault login root-token; this is the root-token generated after vault was unsealed.
 
 
 ### Vault Secret Engines
@@ -72,7 +72,20 @@ Vault CLI reads the token from VAULT_TOKEN env variable, this token is attached 
 
 - Process by which a user/machine gets a Vault token.
 - We use /config endpoint to configure Vault to talk to k8s, we mention k8s cluster info here such as host and crt.
+```
+vault write auth/kubernetes/config \
+   token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+   kubernetes_host=https://${KUBERNETES_PORT_443_TCP_ADDR}:443 \
+   kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+```    
 - We create role -- it uses app service account name (example) within the demo namespace (example) and it gives the app policy which we created in the previous step.
+```
+vault write auth/kubernetes/role/phpapp \
+   bound_service_account_names=app \
+   bound_service_account_namespaces=demo \
+   policies=app \
+   ttl=1h
+```    
 - Auth method of Vault accesses k8s token review api to validate the provided JWT is still valid, the vault service account used in this auth method will need to have access to the token review API, if k8s is configured to use the rbac role, the vault service account should be granted permissions to access this token review api. 
     - After enabling this using clusterrolebinding, the vault will be able to authenticate with k8s and would generate a vault token which will be used by the k8s pod to pull secrets from vault.
 
